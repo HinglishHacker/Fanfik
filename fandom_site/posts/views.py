@@ -58,14 +58,11 @@ def delete_post(request, pk):
 
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    
     comments = post.comments.select_related('user').order_by('created_at')
     top_level_comments = comments.filter(parent__isnull=True)
-
     comment_form = CommentForm()
 
-    # Определяем can_comment сразу
-    can_comment = post.allow_comments
+    can_comment = True  # Поскольку нет поля allow_comments, пусть по умолчанию можно
 
     if request.method == 'POST' and request.user.is_authenticated:
         comment_form = CommentForm(request.POST)
@@ -73,6 +70,16 @@ def post_detail(request, pk):
             comment = comment_form.save(commit=False)
             comment.user = request.user
             comment.post = post
+
+            # Проверка: если отправляется ответ на комментарий
+            parent_id = request.POST.get('parent_id')
+            if parent_id:
+                try:
+                    parent_comment = Comment.objects.get(id=parent_id)
+                    comment.parent = parent_comment
+                except Comment.DoesNotExist:
+                    parent_comment = None
+
             comment.save()
             return redirect('post_detail', pk=pk)
 
@@ -83,7 +90,6 @@ def post_detail(request, pk):
         'comment_form': comment_form,
         'can_comment': can_comment,
     })
-
 # Лайк
 @login_required
 def like_post(request):

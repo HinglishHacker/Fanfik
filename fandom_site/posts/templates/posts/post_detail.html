@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ post.title }}</h2>
+
+<div>
+    <a href="{% url 'user_profile' post.author.username %}">
+        <img src="{{ post.author.avatar.url }}" width="40" height="40" style="border-radius: 50%;">
+        {{ post.author.username }}
+    </a>
+    <p>{{ post.content }}</p>
+
+    {% if post.image %}
+        <img src="{{ post.image.url }}" style="max-width: 400px;">
+    {% endif %}
+
+    <p>❤️ {{ post.likes.count }} лайков</p>
+
+    {% if user.is_authenticated %}
+        <form method="post" action="{% url 'like_post' %}">
+            {% csrf_token %}
+            <input type="hidden" name="post_id" value="{{ post.id }}">
+            <button type="submit">
+                {% if user in post.likes.all %}
+                    ❤️
+                {% else %}
+                    🤍
+                {% endif %}
+                {{ post.likes.count }}
+            </button>
+        </form>
+        <form method="post" action="{% url 'toggle_favorite' pk=post.pk %}">
+            {% csrf_token %}
+            {% if user in post.favorites.all %}
+                <button type="submit">Удалить из избранного ⭐</button>
+            {% else %}
+                <button type="submit">Добавить в избранное ⭐</button>
+            {% endif %}
+        </form>        
+    {% endif %}
+</div>
+
+<hr>
+
+<h3>Комментарии ({{ post.comments.count }})</h3>
+
+{% for comment in top_level_comments %}
+    <div class="comment">
+        <strong>{{ comment.user.username }}</strong>: {{ comment.content }}
+        <div class="comment-time">{{ comment.created_at }}</div>
+
+        <!-- Показать количество ответов -->
+        {% if comment.replies.count > 0 %}
+            <a href="#" class="show-replies" data-comment-id="{{ comment.id }}">
+                Показать {{ comment.replies.count }} ответ(ов)
+            </a>
+            <div class="replies" id="replies-{{ comment.id }}" style="display: none;">
+                {% for reply in comment.replies.all %}
+                    <div class="reply">
+                        <strong>{{ reply.user.username }}</strong>: {{ reply.content }}
+                        <div class="comment-time">{{ reply.created_at }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Форма для добавления ответа -->
+        <form method="post" action="{% url 'add_comment' post.pk %}" class="reply-form" id="reply-form-{{ comment.id }}" style="display: none; margin-top: 5px;">
+            {% csrf_token %}
+            <textarea name="content" rows="2" style="width: 100%;" placeholder="Ваш ответ..."></textarea>
+            <input type="hidden" name="parent_id" value="{{ comment.id }}">
+            <button type="submit">Ответить</button>
+        </form>
+
+        <!-- Кнопка "Ответить" -->
+        <a href="#" class="reply-link" data-comment-id="{{ comment.id }}">Ответить</a>
+    </div>
+{% empty %}
+    <p>Пока нет комментариев.</p>
+{% endfor %}
+
+{% if can_comment %}
+    {% if user.is_authenticated %}
+        <hr>
+        <form method="post" action="{% url 'post_detail' post.pk %}">
+            {% csrf_token %}
+            <textarea name="content" rows="3" style="width: 100%;" placeholder="Добавьте комментарий..."></textarea>
+            <button type="submit">💬 Добавить комментарий</button>
+        </form>
+    {% else %}
+        <p><a href="{% url 'login' %}">Войдите</a>, чтобы комментировать.</p>
+    {% endif %}
+{% else %}
+    <p>Комментариев к этому посту не разрешено.</p>
+{% endif %}
+
+<a href="{% url 'post_list' %}" style="display: block; margin-top: 20px;">← Назад к постам</a>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обрабатываем нажатие на "Показать X ответов"
+        document.querySelectorAll('.show-replies').forEach(function(button) {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                const commentId = this.getAttribute('data-comment-id');
+                const repliesDiv = document.getElementById('replies-' + commentId);
+                repliesDiv.style.display = (repliesDiv.style.display === 'none') ? 'block' : 'none';
+                this.textContent = (repliesDiv.style.display === 'none') 
+                    ? 'Показать ответы' 
+                    : 'Скрыть ответы';
+            });
+        });
+
+        // Обрабатываем нажатие на "Ответить"
+        document.querySelectorAll('.reply-link').forEach(function(link) {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                const commentId = this.getAttribute('data-comment-id');
+                const replyForm = document.getElementById('reply-form-' + commentId);
+                replyForm.style.display = (replyForm.style.display === 'none') ? 'block' : 'none';
+            });
+        });
+    });
+</script>
+
+{% endblock %}

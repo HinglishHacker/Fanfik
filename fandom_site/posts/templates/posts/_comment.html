@@ -1,0 +1,31 @@
+<div style="margin-left: {{ level|default:0 }}px; margin-bottom: 10px;">
+    <strong>{{ comment.user.username }}</strong>: {{ comment.content }}
+    <div style="font-size: small; color: gray;">{{ comment.created_at }}</div>
+
+    {% if request.user == comment.user %}
+        <form action="{% url 'delete_comment' comment.id %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" style="color: red; background: none; border: none;">Удалить</button>
+        </form>
+        |
+        <a href="{% url 'edit_comment' comment.id %}" style="color: blue;">Редактировать</a>
+    {% endif %}
+
+    <a href="#" class="reply-link" data-comment-id="{{ comment.id }}">↪ Ответить</a>
+
+    <form method="post" action="{% url 'add_comment' post.pk %}" class="reply-form" id="reply-form-{{ comment.id }}" style="display: none; margin-top: 5px;">
+        {% csrf_token %}
+        <textarea name="content" rows="2" style="width: 100%;" placeholder="Ваш ответ..."></textarea>
+        <input type="hidden" name="parent_id" value="{{ comment.id }}">
+        <button type="submit">💬 Ответить</button>
+    </form>
+
+    {% if comment.replies.all %}
+        <a href="#" class="toggle-replies" data-target="replies-{{ comment.id }}">Показать {{ comment.replies.count }} ответ(ы)</a>
+        <div id="replies-{{ comment.id }}" class="replies" style="display: none;">
+            {% for reply in comment.replies.all %}
+                {% include 'posts/_comment.html' with comment=reply post=post level=30 %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

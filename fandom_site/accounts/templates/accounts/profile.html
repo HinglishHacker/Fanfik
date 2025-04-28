@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+
+<div class="profile-page">
+
+    <!-- Верхняя часть: кавер и аватар -->
+    <div class="profile-header" style="text-align: center; position: relative;">
+        {% if user.cover %}
+            <img src="{{ user.cover.url }}" style="width: 100%; max-height: 300px; object-fit: cover;">
+        {% else %}
+            <div style="width: 100%; height: 300px; background-color: #ccc;"></div>
+        {% endif %}
+        
+        <img src="{{ user.avatar.url }}" 
+             style="width: 120px; height: 120px; border-radius: 50%; margin-top: -60px; border: 4px solid white; background: white;">
+        
+        <h2 style="margin-top: 10px;">{{ user.username }}</h2>
+        
+        <p>👥 Подписчики: {{ user.followers.count }} | ➡️ Подписки: {{ user.following.count }}</p>
+        
+        <a href="{% url 'edit_profile' %}" class="profile-button">✏️ Редактировать профиль</a>
+        <a href="{% url 'create_post' %}" class="profile-button">➕ Добавить фанфик</a>
+    </div>
+
+    <!-- Био и Email -->
+    <div class="profile-info" style="text-align: center; margin-top: 20px;">
+        {% if user.bio %}
+            <p><strong>О себе:</strong> {{ user.bio }}</p>
+        {% endif %}
+        <p><strong>Email:</strong> {{ user.email }}</p>
+    </div>
+
+    <hr style="margin: 30px 0;">
+
+    <!-- Фанфики пользователя -->
+    <h3 style="text-align: center;">📚 Мои фанфики:</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px;">
+        {% for post in posts %}
+            <div style="width: 300px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                {% if post.image %}
+                    <img src="{{ post.image.url }}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 10px;">
+                {% endif %}
+                <h4 style="margin-top: 15px;">{{ post.title }}</h4>
+                <p>{{ post.content|truncatewords:20 }}</p>
+                <small style="color: gray;">{{ post.created_at|date:"d M Y" }}</small>
+            </div>
+        {% empty %}
+            <p style="text-align: center;">Вы ещё не добавили фанфики.</p>
+        {% endfor %}
+    </div>
+
+    <hr style="margin: 30px 0;">
+
+    <!-- Избранные посты -->
+    <h3 style="text-align: center;">🌟 Мои избранные посты:</h3>
+    <ul style="list-style: none; padding: 0; text-align: center;">
+        {% for fav_post in user.favorite_posts.all %}
+            <li style="margin: 10px 0;">
+                <a href="{% url 'post_detail' pk=fav_post.pk %}" style="text-decoration: none; color: #3498db;">
+                    {{ fav_post.title }}
+                </a>
+            </li>
+        {% empty %}
+            <p style="text-align: center;">У вас пока нет избранных постов.</p>
+        {% endfor %}
+    </ul>
+
+</div>
+
+{% endblock %}

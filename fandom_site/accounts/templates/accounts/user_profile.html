@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <img class="profile-avatar" src="{{ user_profile.avatar.url }}" alt="avatar">
+        <h2>{{ user_profile.username }}</h2>
+        <p>{{ user_profile.bio }}</p>
+
+        <div class="profile-stats">
+            <span><strong>Подписчики:</strong> {{ followers_count }}</span>
+            <span><strong>Подписки:</strong> {{ following_count }}</span>
+        </div>
+
+        {% if request.user != user_profile %}
+            <form method="post" action="{% url 'toggle_follow' username=user_profile.username %}">
+                {% csrf_token %}
+                {% if is_following %}
+                    <button type="submit" class="unfollow-button">Отписаться</button>
+                {% else %}
+                    <button type="submit" class="follow-button">Подписаться</button>
+                {% endif %}
+            </form>
+        {% endif %}
+    </div>
+
+    <h3 class="user-posts-title">Посты {{ user_profile.username }}</h3>
+
+    <div class="posts-list">
+        {% for post in posts %}
+            <div class="post-item">
+                <h4>{{ post.title }}</h4>
+                <p>{{ post.content }}</p>
+                {% if post.image %}
+                    <img src="{{ post.image.url }}" class="post-image">
+                {% endif %}
+                <hr>
+            </div>
+        {% empty %}
+            <p class="no-posts-message">У пользователя пока нет постов.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

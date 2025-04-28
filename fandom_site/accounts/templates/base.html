@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Фандом-сайт{% endblock %}</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #222;
+            color: #fff;
+            padding: 10px 20px;
+        }
+        nav a {
+            color: #fff;
+            margin-right: 10px;
+            text-decoration: none;
+        }
+        .container {
+            padding: 20px;
+        }
+        footer {
+            background-color: #eee;
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .profile-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .profile-header {
+            margin-bottom: 30px;
+        }
+        
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+    
+        .profile-stats {
+            margin: 15px 0;
+            font-size: 16px;
+            color: #555;
+        }
+        
+        .profile-stats span {
+            margin: 0 10px;
+        }
+        
+        .follow-button, .unfollow-button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .follow-button {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .unfollow-button {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .user-posts-title {
+            margin-top: 40px;
+            font-size: 24px;
+            color: #333;
+        }
+        
+        .posts-list {
+            margin-top: 20px;
+        }
+        
+        .post-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .post-image {
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 10px;
+        }
+        
+        .no-posts-message {
+            font-size: 18px;
+            color: #777;
+        }
+    </style>
+        
+    </head>
+    <body>
+        <header>
+            <h1>FANKOTEJ</h1>
+        <nav style="display: flex; align-items: center;">
+            <a href="/">Главная</a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'profile' %}">Профиль</a>
+            <a href="{% url 'logout' %}">Выйти</a>
+                <a href="{% url 'create_post' %}">➕Добавить фанфики</a>
+                <a href="{% url 'profile' %}" style="display: flex; align-items: center; margin-left: auto; text-decoration: none;">
+                    <img src="{{ user.avatar.url }}" alt="Аватар" width="50" height="50"
+                         style="border-radius: 50%; margin-left: 10px; object-fit: cover;">
+                    <span style="color:yellow; margin-left: 10px;">{{ user.username }}</span>
+                </a>                
+                {% else %}
+                <a href="{% url 'login' %}">Вход</a>
+                <a href="{% url 'register' %}">Регистрация</a>
+            {% endif %}
+        </nav>        
+    </header>
+
+    <div class="container">
+        {% if messages %}
+            <ul>
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <footer>
+        &copy

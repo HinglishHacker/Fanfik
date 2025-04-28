@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Фанфики</h2>
+
+{% for post in posts %}
+    <div style="margin-bottom: 20px;">
+        <!-- Автор -->
+        <a href="{% url 'user_profile' post.author.username %}">
+            <img src="{{ post.author.avatar.url }}" width="40" height="40" style="border-radius: 50%;">
+            {{ post.author.username }}
+        </a>
+
+        <!-- Название -->
+        <h3><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h3>
+
+        <!-- Текст -->
+        <p>{{ post.content }}</p>
+
+        <!-- Картинка -->
+        {% if post.image %}
+            <img src="{{ post.image.url }}" style="max-width: 400px;">
+        {% endif %}
+
+        <!-- Лайки -->
+        <form method="post" action="{% url 'like_post' %}">
+            {% csrf_token %}
+            <input type="hidden" name="post_id" value="{{ post.id }}">
+            <button type="submit">
+                {% if user in post.likes.all %}
+                    ❤️
+                {% else %}
+                    🤍
+                {% endif %}
+                {{ post.likes.count }}
+            </button>
+        </form>
+        <form method="post" action="{% url 'toggle_favorite' pk=post.pk %}">
+            {% csrf_token %}
+            {% if user in post.favorites.all %}
+                <button type="submit">Удалить из избранного ⭐</button>
+            {% else %}
+                <button type="submit">Добавить в избранное ⭐</button>
+            {% endif %}
+        </form>        
+        <!-- Комментарии -->
+        <div style="margin-top: 10px;">
+            <a href="{% url 'post_detail' post.pk %}" style="text-decoration: none;">
+                💬 Комментарии ({{ post.comments.count }})
+            </a>
+        </div>
+
+        <!-- Редактирование -->
+        {% if user == post.author %}
+            <div style="margin-top: 10px;">
+                <a href="{% url 'edit_post' post.pk %}" style="margin-right: 10px;">✏️ Редактировать</a>
+                <form action="{% url 'delete_post' post.pk %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" onclick="return confirm('Удалить пост?');">🗑️ Удалить</button>
+                </form>
+            </div>
+        {% endif %}
+
+        <hr>
+    </div>
+{% endfor %}
+
+{% if user.is_authenticated %}
+    <a href="{% url 'create_post' %}">➕ Добавить фанфик</a>
+{% endif %}
+{% endblock %}

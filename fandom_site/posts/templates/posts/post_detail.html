@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="post-card">
     <div class="post-header">
@@ -19,31 +18,31 @@
         <img src="{{ post.image.url }}" class="post-image">
     {% endif %}
 
-    <div class="post-actions">
-        <form method="post" action="{% url 'like_post' %}">
-            {% csrf_token %}
-            <input type="hidden" name="post_id" value="{{ post.id }}">
-            <button type="submit" class="like-btn">
-                {% if user in post.likes.all %}
-                    ❤️
-                {% else %}
-                    🤍
-                {% endif %}
-                {{ post.likes.count }}
-            </button>
-        </form>
+    <!-- Лайки -->
+    <div class="action-buttons">
+        <!-- Лайк -->
+        <button class="action-button {% if user in post.likes.all %}liked{% endif %}" onclick="toggleLike({{ post.id }})" id="like-btn-{{ post.id }}">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 
+            8.5 2 5.42 4.42 3 7.5 3c1.74 0 
+            3.41 0.81 4.5 2.09C13.09 3.81 
+            14.76 3 16.5 3 19.58 3 22 5.42 
+            22 8.5c0 3.78-3.4 6.86-8.55 
+            11.54L12 21.35z"/>
+          </svg>
+          <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+        </button>
+      
+        <!-- Избранное -->
+        <button class="action-button {% if user in post.favorites.all %}favorited{% endif %}" onclick="toggleFavorite({{ post.id }})" id="favorite-btn-{{ post.id }}">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path
+            d="M12 17.27L18.18 21 16.54 13.97 
+            22 9.24l-7.19-.61L12 2 9.19 
+            8.63 2 9.24l5.46 4.73L5.82 21z"/>
+          </svg>
+          <span id="favorite-count-{{ post.id }}">{{ post.favorites.count }}</span>
+        </button>
         
-        <form method="post" action="{% url 'toggle_favorite' pk=post.pk %}">
-            {% csrf_token %}
-            <button type="submit" class="favorite-btn">
-                {% if user in post.favorites.all %}
-                    Удалить из избранного ⭐
-                {% else %}
-                    Добавить в избранное ⭐
-                {% endif %}
-            </button>
-        </form>
-
         <a href="#comments" class="comment-btn">
             💬 Комментарии ({{ post.comments.count }})
         </a>
@@ -64,11 +63,11 @@
     {% if can_comment %}
         {% if user.is_authenticated %}
             <hr>
-            <form method="post" action="{% url 'post_detail' post.pk %}">
+            <form method="post" action="{% url 'post_detail' post.pk %}" id="comment-form">
                 {% csrf_token %}
-                <textarea name="content" rows="3" placeholder="Добавьте комментарий..."></textarea>
+                <textarea id="comment-content" name="content" rows="3" placeholder="Добавьте комментарий..."></textarea>
                 <button type="submit">💬 Добавить комментарий</button>
-            </form>
+            </form>                        
         {% else %}
             <p><a href="{% url 'login' %}">Войдите</a>, чтобы комментировать.</p>
         {% endif %}
@@ -80,31 +79,89 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.toggle-replies-btn').forEach(function(button) {
-            button.addEventListener('click', function() {
-                const targetId = this.getAttribute('data-target');
-                const repliesDiv = document.getElementById(targetId);
-                if (repliesDiv.style.display === 'none') {
-                    repliesDiv.style.display = 'block';
-                    this.classList.add('open');
-                    this.innerHTML = '▼ Скрыть ответы';
-                } else {
-                    repliesDiv.style.display = 'none';
-                    this.classList.remove('open');
-                    this.innerHTML = '▶ Показать ' + repliesDiv.children.length + ' ответ(ов)';
-                }
-            });
-        });
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
-        document.querySelectorAll('.reply-link').forEach(function(link) {
-            link.addEventListener('click', function(event) {
-                event.preventDefault();
-                const commentId = this.getAttribute('data-comment-id');
-                const replyForm = document.getElementById('reply-form-' + commentId);
-                replyForm.style.display = (replyForm.style.display === 'none') ? 'block' : 'none';
-            });
+function toggleLike(postId) {
+    fetch(`/posts/post/${postId}/like/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ post_id: postId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const btn = document.getElementById(`like-btn-${postId}`);
+        const countSpan = btn.querySelector('span');
+        countSpan.textContent = data.likes_count;
+
+        if (data.liked) {
+            btn.classList.add('liked');
+        } else {
+            btn.classList.remove('liked');
+        }
+    });
+}
+function toggleFavorite(postId) {
+    fetch(`/posts/post/${postId}/favorite/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ post_id: postId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const btn = document.getElementById(`favorite-btn-${postId}`);
+        const countSpan = btn.querySelector('span');
+        countSpan.textContent = data.favorites_count;
+
+        if (data.added) {
+            btn.classList.add('favorited');
+        } else {
+            btn.classList.remove('favorited');
+        }
+    });
+}
+</script>
+<script>
+    document.getElementById('comment-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const content = document.getElementById('comment-content').value;
+
+        fetch("{% url 'post_detail' post.pk %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: new URLSearchParams({
+                'content': content
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector('.comments-section').insertAdjacentHTML('beforeend', data.comment_html);
+                document.getElementById('comment-content').value = '';
+            } else {
+                alert("Ошибка добавления комментария");
+            }
         });
     });
-</script>
+</script>    
 {% endblock %}

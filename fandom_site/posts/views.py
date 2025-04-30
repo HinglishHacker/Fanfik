@@ -5,6 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404, HttpResponseRe
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.contrib import messages
+import json
 
 # Список всех постов
 def post_list(request):
@@ -92,17 +93,16 @@ def post_detail(request, pk):
     })
 # Лайк
 @login_required
-def like_post(request):
-    if request.method == 'POST':
-        post_id = request.POST.get('post_id')
-        post = get_object_or_404(Post, id=post_id)
-        if request.user in post.likes.all():
-            post.likes.remove(request.user)
-        else:
-            post.likes.add(request.user)
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
-from django.shortcuts import get_object_or_404, redirect
-from .models import Post, Comment
+def like_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.user in post.likes.all():
+        post.likes.remove(request.user)
+        liked = False
+    else:
+        post.likes.add(request.user)
+        liked = True
+    return JsonResponse({'liked': liked, 'likes_count': post.likes.count()})
+
 
 def add_comment(request, post_pk):
     post = get_object_or_404(Post, pk=post_pk)
@@ -154,11 +154,16 @@ def edit_comment(request, comment_id):
     return render(request, 'posts/edit_comment.html', {'form': form, 'comment': comment})
 
 
-@login_required
 def toggle_favorite(request, pk):
-    post = get_object_or_404(Post, pk=pk)
+    post = Post.objects.get(pk=pk)
     if request.user in post.favorites.all():
         post.favorites.remove(request.user)
+        added = False
     else:
         post.favorites.add(request.user)
-    return redirect('post_detail', pk=pk)  # Возвращаем обратно к посту
+        added = True
+
+    return JsonResponse({
+        'added': added,
+        'favorites_count': post.favorites.count(),
+    })

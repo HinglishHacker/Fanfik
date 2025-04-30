@@ -3,68 +3,146 @@
 <h2>Фанфики</h2>
 
 {% for post in posts %}
-    <div style="margin-bottom: 20px;">
-        <!-- Автор -->
+<div class="post-card">
+  <div style="display: block; margin-left: 30%; margin-right: 30%">
+    <div style="margin-bottom: 20px; width: 100%;">
+
+      <!-- Автор -->
+      {% if post.author and post.author.username %}
         <a href="{% url 'user_profile' post.author.username %}">
-            <img src="{{ post.author.avatar.url }}" width="40" height="40" style="border-radius: 50%;">
-            {{ post.author.username }}
+          <img src="{{ post.author.avatar.url }}" width="40" height="40" style="border-radius: 50%;">
+          {{ post.author.username }}
         </a>
+      {% else %}
+        <span>Неизвестный автор</span>
+      {% endif %}
 
-        <!-- Название -->
-        <h3><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h3>
+      <!-- Название -->
+      <h3><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h3>
 
-        <!-- Текст -->
-        <p>{{ post.content }}</p>
+      <!-- Текст -->
+      <p>{{ post.content }}</p>
 
-        <!-- Картинка -->
-        {% if post.image %}
-            <img src="{{ post.image.url }}" style="max-width: 400px;">
-        {% endif %}
+      <!-- Картинка -->
+      {% if post.image %}
+        <img src="{{ post.image.url }}" style="max-width: 400px;">
+      {% endif %}
 
-        <!-- Лайки -->
-        <form method="post" action="{% url 'like_post' %}">
-            {% csrf_token %}
-            <input type="hidden" name="post_id" value="{{ post.id }}">
-            <button type="submit">
-                {% if user in post.likes.all %}
-                    ❤️
-                {% else %}
-                    🤍
-                {% endif %}
-                {{ post.likes.count }}
-            </button>
-        </form>
-        <form method="post" action="{% url 'toggle_favorite' pk=post.pk %}">
-            {% csrf_token %}
-            {% if user in post.favorites.all %}
-                <button type="submit">Удалить из избранного ⭐</button>
-            {% else %}
-                <button type="submit">Добавить в избранное ⭐</button>
-            {% endif %}
-        </form>        
+      <!-- Лайки -->
+      <div class="action-buttons">
+        <!-- Лайк -->
+        <button class="action-button {% if user in post.likes.all %}liked{% endif %}" onclick="toggleLike({{ post.id }})" id="like-btn-{{ post.id }}">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 
+            8.5 2 5.42 4.42 3 7.5 3c1.74 0 
+            3.41 0.81 4.5 2.09C13.09 3.81 
+            14.76 3 16.5 3 19.58 3 22 5.42 
+            22 8.5c0 3.78-3.4 6.86-8.55 
+            11.54L12 21.35z"/>
+          </svg>
+          <span id="like-count-{{ post.id }}">{{ post.likes.count }}</span>
+        </button>
+      
+        <!-- Избранное -->
+        <button class="action-button {% if user in post.favorites.all %}favorited{% endif %}" onclick="toggleFavorite({{ post.id }})" id="favorite-btn-{{ post.id }}">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path
+            d="M12 17.27L18.18 21 16.54 13.97 
+            22 9.24l-7.19-.61L12 2 9.19 
+            8.63 2 9.24l5.46 4.73L5.82 21z"/>
+          </svg>
+          <span id="favorite-count-{{ post.id }}">{{ post.favorites.count }}</span>
+        </button>
+      
         <!-- Комментарии -->
-        <div style="margin-top: 10px;">
-            <a href="{% url 'post_detail' post.pk %}" style="text-decoration: none;">
-                💬 Комментарии ({{ post.comments.count }})
-            </a>
-        </div>
+        <a href="{% url 'post_detail' post.pk %}#comments" class="action-button">
+          <svg id="SvgjsSvg1001" width="288" height="288" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.com/svgjs"><defs id="SvgjsDefs1002"></defs><g id="SvgjsG1008" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="288" height="288"><path fill="#2d6cdf" d="M8 1C3.6 1 0 3.5 0 6.5c0 2 2 3.8 4 4.8 0 2.1-2 2.8-2 2.8 2.8 0 4.4-1.3 5.1-2.1H8c4.4 0 8-2.5 8-5.5S12.4 1 8 1zM5 8c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm3 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1zm3 0c-.6 0-1-.4-1-1s.4-1 1-1 1 .4 1 1-.4 1-1 1z" class="color444 svgShape"></path></svg>
+          <span>{{ post.comments.count }}</span>
+        </a>
+      </div>
+      
 
-        <!-- Редактирование -->
-        {% if user == post.author %}
-            <div style="margin-top: 10px;">
-                <a href="{% url 'edit_post' post.pk %}" style="margin-right: 10px;">✏️ Редактировать</a>
-                <form action="{% url 'delete_post' post.pk %}" method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" onclick="return confirm('Удалить пост?');">🗑️ Удалить</button>
-                </form>
-            </div>
-        {% endif %}
+      <!-- Редактирование -->
+      {% if user == post.author %}
+      <div style="margin-top: 10px;">
+        <a href="{% url 'edit_post' post.pk %}" style="margin-right: 10px;">✏️ Редактировать</a>
+        <form action="{% url 'delete_post' post.pk %}" method="post" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" onclick="return confirm('Удалить пост?');">🗑️ Удалить</button>
+        </form>
+      </div>
+      {% endif %}
 
-        <hr>
+      <hr>
     </div>
+  </div>
+</div>
 {% endfor %}
 
 {% if user.is_authenticated %}
-    <a href="{% url 'create_post' %}">➕ Добавить фанфик</a>
+  <a href="{% url 'create_post' %}">➕ Добавить фанфик</a>
 {% endif %}
+
+<!-- JavaScript -->
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.slice(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function toggleLike(postId) {
+    fetch(`/posts/post/${postId}/like/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ post_id: postId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const btn = document.getElementById(`like-btn-${postId}`);
+        const countSpan = btn.querySelector('span');
+        countSpan.textContent = data.likes_count;
+
+        if (data.liked) {
+            btn.classList.add('liked');
+        } else {
+            btn.classList.remove('liked');
+        }
+    });
+}
+
+function toggleFavorite(postId) {
+    fetch(`/posts/post/${postId}/favorite/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ post_id: postId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const btn = document.getElementById(`favorite-btn-${postId}`);
+        const countSpan = btn.querySelector('span');
+        countSpan.textContent = data.favorites_count;
+
+        if (data.added) {
+            btn.classList.add('favorited');
+        } else {
+            btn.classList.remove('favorited');
+        }
+    });
+}
+</script>
 {% endblock %}
